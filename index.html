@@ -1814,6 +1814,17 @@ document.querySelector('.mobile-header .btn-accent')?.addEventListener('click', 
 
 // Inline card header buttons (Projects, Tasks, Invoices)
 document.addEventListener('click', e => {
+  // Checkbox toggle — .check-box is a div, not a button, so handle it before the button gate
+  const boxEl = e.target.closest('.check-box')
+  if (boxEl) {
+    const isChecked = boxEl.classList.toggle('checked')
+    boxEl.setAttribute('aria-checked', isChecked)
+    const nameEl = boxEl.closest('.task-item')?.querySelector('.task-name')
+    nameEl?.classList.toggle('crossed', isChecked)
+    showToast(isChecked ? '✓ Задача выполнена' : 'Задача возобновлена')
+    return
+  }
+
   const btn = e.target.closest('button')
   if (!btn) return
 
@@ -1852,15 +1863,6 @@ document.addEventListener('click', e => {
     }
   }
 
-  // Checkbox toggle
-  if (btn.classList.contains('check-box') || e.target.closest('.check-box')) {
-    const box = e.target.closest('.check-box')
-    const isChecked = box.classList.toggle('checked')
-    box.setAttribute('aria-checked', isChecked)
-    const nameEl = box.closest('.task-item')?.querySelector('.task-name')
-    nameEl?.classList.toggle('crossed', isChecked)
-    showToast(isChecked ? '✓ Задача выполнена' : 'Задача возобновлена')
-  }
 })
 
 // Topbar period selector
