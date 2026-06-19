@@ -579,6 +579,83 @@
       .kpi-cell:last-child  { border-radius: 0 0 11px 11px; }
       .kpi-cell:nth-child(2), .kpi-cell:nth-child(3) { border-radius: 0; }
     }
+  /* ── Side Panel ─────────────────────────── */
+    .panel-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 200;
+      backdrop-filter: blur(2px);
+    }
+    .panel-overlay.open { display: block; }
+
+    .side-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw;
+      background: var(--surface); border-left: 1px solid var(--border);
+      z-index: 201; transform: translateX(100%);
+      transition: transform .22s cubic-bezier(.4,0,.2,1);
+      display: flex; flex-direction: column;
+      box-shadow: -8px 0 40px rgba(0,0,0,.2);
+    }
+    .side-panel.open { transform: translateX(0); }
+
+    .panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .panel-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+    .panel-close {
+      width: 32px; height: 32px; border-radius: 7px;
+      border: 1px solid var(--border); background: none;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      color: var(--text2); transition: background .12s;
+    }
+    .panel-close:hover { background: var(--surface2); }
+    .panel-close svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .panel-body { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+    .form-field { display: flex; flex-direction: column; gap: 5px; }
+    .form-label { font-size: 11.5px; font-weight: 700; letter-spacing: .4px; color: var(--text3); text-transform: uppercase; }
+    .form-input, .form-select, .form-textarea {
+      padding: 9px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--surface2);
+      color: var(--text); font-size: 13px;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .panel-footer {
+      padding: 16px 24px; border-top: 1px solid var(--border); flex-shrink: 0;
+      display: flex; gap: 8px; justify-content: flex-end;
+    }
+
+    /* ── Report Preview ──────────────────────── */
+    .report-preview { display: flex; flex-direction: column; gap: 12px; }
+    .rp-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; border-radius: 8px; background: var(--surface2);
+    }
+    .rp-label { font-size: 12.5px; color: var(--text2); }
+    .rp-val   { font-size: 13px; font-weight: 700; }
+    .rp-head  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--text3); margin: 6px 0 4px; }
+
+    /* ── Toast ───────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
+      background: var(--text); color: var(--bg);
+      padding: 10px 20px; border-radius: 9px;
+      font-size: 13px; font-weight: 600;
+      z-index: 999; transition: transform .22s ease, opacity .22s ease;
+      opacity: 0; pointer-events: none; white-space: nowrap;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+
   </style>
 </head>
 <body>
@@ -1492,6 +1569,319 @@ menuBtn.addEventListener('click', () => drawer.classList.contains('open') ? clos
 overlay.addEventListener('click', closeDrawer)
 
 // ─────────────────────────────────────────────
+// SIDE PANEL
+// ─────────────────────────────────────────────
+const panelOverlay = document.getElementById('panelOverlay')
+const sidePanel    = document.getElementById('sidePanel')
+const panelTitle   = document.getElementById('panelTitle')
+const panelBody    = document.getElementById('panelBody')
+
+function openPanel(title, html) {
+  panelTitle.textContent = title
+  panelBody.innerHTML = html
+  panelOverlay.classList.add('open')
+  sidePanel.classList.add('open')
+  if (window.lucide) lucide.createIcons()
+}
+
+function closePanel() {
+  sidePanel.classList.remove('open')
+  panelOverlay.classList.remove('open')
+}
+
+panelOverlay.addEventListener('click', closePanel)
+
+// ─────────────────────────────────────────────
+// TOAST
+// ─────────────────────────────────────────────
+const toastEl = document.getElementById('toast')
+let toastTimer = null
+
+function showToast(msg) {
+  toastEl.querySelector('span').textContent = msg
+  toastEl.classList.add('show')
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800)
+}
+
+// ─────────────────────────────────────────────
+// FORM TEMPLATES
+// ─────────────────────────────────────────────
+const CLIENT_OPTS = CLIENTS_DATA.map(c => `<option>${c.name}</option>`).join('')
+const PROJ_OPTS   = PROJECTS.map(p => `<option>${p.client} · ${p.project}</option>`).join('')
+
+const FORMS = {
+  project: `
+    <div class="form-field"><label class="form-label">Название проекта</label><input class="form-input" placeholder="Например: Ребрендинг 2026" /></div>
+    <div class="form-field"><label class="form-label">Клиент</label><select class="form-select">${CLIENT_OPTS}<option>+ Новый клиент</option></select></div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Бюджет (₽)</label><input class="form-input" type="number" placeholder="150000" /></div>
+      <div class="form-field"><label class="form-label">Дедлайн</label><input class="form-input" type="date" /></div>
+    </div>
+    <div class="form-field"><label class="form-label">Статус</label><select class="form-select"><option>В работе</option><option>На ревью</option><option>На паузе</option></select></div>
+    <div class="form-field"><label class="form-label">Описание</label><textarea class="form-textarea" placeholder="Краткое описание проекта..."></textarea></div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:4px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Проект создан')">Создать проект</button>
+    </div>`,
+
+  client: `
+    <div class="form-field"><label class="form-label">Компания</label><input class="form-input" placeholder="Название компании" /></div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Контактное лицо</label><input class="form-input" placeholder="Иван Иванов" /></div>
+      <div class="form-field"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="ivan@co.ru" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Телефон</label><input class="form-input" placeholder="+7 900 000-00-00" /></div>
+      <div class="form-field"><label class="form-label">Сфера</label><select class="form-select"><option>IT</option><option>Ритейл</option><option>Финансы</option><option>Медиа</option><option>Другое</option></select></div>
+    </div>
+    <div class="form-field"><label class="form-label">Заметки</label><textarea class="form-textarea" placeholder="Дополнительная информация..."></textarea></div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:4px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Клиент добавлен')">Добавить клиента</button>
+    </div>`,
+
+  task: `
+    <div class="form-field"><label class="form-label">Задача</label><input class="form-input" placeholder="Что нужно сделать?" /></div>
+    <div class="form-field"><label class="form-label">Проект</label><select class="form-select">${PROJ_OPTS}</select></div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Срок</label><input class="form-input" type="date" /></div>
+      <div class="form-field"><label class="form-label">Приоритет</label><select class="form-select"><option>Срочно</option><option>Высокий</option><option>Средний</option><option>Низкий</option></select></div>
+    </div>
+    <div class="form-field"><label class="form-label">Исполнитель</label><input class="form-input" placeholder="Имя или email" /></div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:4px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Задача создана')">Создать задачу</button>
+    </div>`,
+
+  invoice: `
+    <div class="form-field"><label class="form-label">Клиент</label><select class="form-select">${CLIENT_OPTS}</select></div>
+    <div class="form-field"><label class="form-label">Описание услуги</label><input class="form-input" placeholder="Дизайн сайта · этап 1" /></div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Сумма (₽)</label><input class="form-input" type="number" placeholder="80000" /></div>
+      <div class="form-field"><label class="form-label">Срок оплаты</label><input class="form-input" type="date" /></div>
+    </div>
+    <div class="form-field"><label class="form-label">Статус</label><select class="form-select"><option>Черновик</option><option>Отправлен</option><option>Ожидает</option></select></div>
+    <div class="form-field"><label class="form-label">Примечание</label><textarea class="form-textarea" placeholder="Дополнительные условия..."></textarea></div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:4px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Счёт создан')">Создать счёт</button>
+    </div>`,
+
+  timeEntry: `
+    <div class="form-field"><label class="form-label">Проект</label><select class="form-select">${PROJ_OPTS}</select></div>
+    <div class="form-field"><label class="form-label">Описание работы</label><input class="form-input" placeholder="Что делал?" /></div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Начало</label><input class="form-input" type="time" value="09:00" /></div>
+      <div class="form-field"><label class="form-label">Конец</label><input class="form-input" type="time" value="10:00" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-field"><label class="form-label">Дата</label><input class="form-input" type="date" /></div>
+      <div class="form-field"><label class="form-label">Биллируемо</label><select class="form-select"><option>Да</option><option>Нет</option></select></div>
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:4px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Запись добавлена')">Добавить запись</button>
+    </div>`,
+
+  export: `
+    <div class="form-field"><label class="form-label">Период</label><select class="form-select"><option>Июнь 2026</option><option>Q2 2026</option><option>2026 (год)</option><option>Произвольный</option></select></div>
+    <div class="form-field"><label class="form-label">Формат</label><select class="form-select"><option>PDF</option><option>Excel (.xlsx)</option><option>CSV</option></select></div>
+    <div class="form-field"><label class="form-label">Включить</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+        ${['Доходы по месяцам','Разбивка по клиентам','Счета и задолженности','График проектов'].map(o=>`<label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" checked style="width:14px;height:14px;accent-color:var(--accent)"> ${o}</label>`).join('')}
+      </div>
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Отмена</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Экспорт загружается...')">Скачать отчёт</button>
+    </div>`,
+}
+
+// ─────────────────────────────────────────────
+// REPORT MODALS
+// ─────────────────────────────────────────────
+const REPORT_PANELS = [
+  { title:'Финансовый отчёт · Июнь 2026', html: `
+    <div class="report-preview">
+      <div class="rp-head">Доходы</div>
+      ${[['Выставлено','₽842 000'],['Оплачено','₽718 000'],['Ожидается','₽320 000'],['Просрочено','₽124 000']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">По типу услуг</div>
+      ${[['Веб-разработка','38%','₽319к'],['Дизайн','27%','₽227к'],['SEO / Маркетинг','20%','₽168к'],['Консалтинг','15%','₽126к']]
+        .map(([l,p,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v} <span style="color:var(--text3);font-weight:500">(${p})</span></span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Отчёт экспортирован')">Экспорт PDF</button>
+    </div>` },
+
+  { title:'Отчёт по клиентам · Q2 2026', html: `
+    <div class="report-preview">
+      <div class="rp-head">Топ клиенты по обороту</div>
+      ${[['Altacom','₽480к','3 проекта'],['ТехЛаб','₽200к','4 проекта'],['ГлобалКом','₽120к','5 проектов'],['SkyNet IO','₽165к','2 проекта'],['МаркетТех','₽95к','2 проекта']]
+        .map(([n,v,p])=>`<div class="rp-row"><span class="rp-label">${n}<br><small style="color:var(--text3)">${p}</small></span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">Показатели</div>
+      ${[['NPS','78 / Excellent'],['Средний чек','₽168к'],['Повторных клиентов','78%'],['LTV (средний)','₽480к']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Отчёт экспортирован')">Экспорт PDF</button>
+    </div>` },
+
+  { title:'Статус проектов · Июнь 2026', html: `
+    <div class="report-preview">
+      <div class="rp-head">Сводка</div>
+      ${[['В работе','8 проектов'],['На ревью','2 проекта'],['На паузе','1 проект'],['Завершено','3 проекта']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">Бюджет vs факт</div>
+      ${[['Выделено бюджета','₽1 555к'],['Израсходовано','₽980к'],['Перерасход','₽0'],['Остаток','₽575к']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Отчёт экспортирован')">Экспорт PDF</button>
+    </div>` },
+
+  { title:'Тайм-отчёт · Июнь 2026', html: `
+    <div class="report-preview">
+      <div class="rp-head">Итого</div>
+      ${[['Всего часов','248 ч'],['Биллируемых','206 ч (83%)'],['Небиллируемых','42 ч (17%)'],['Ставка (средняя)','₽3 394/ч']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">По проектам</div>
+      ${[['Altacom · Ребрендинг','54 ч'],['FinStart · Дизайн-система','48 ч'],['SkyNet IO · Мобильный UI','42 ч'],['МаркетТех · SEO','36 ч'],['Прочие','68 ч']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Отчёт экспортирован')">Экспорт PDF</button>
+    </div>` },
+
+  { title:'Дебиторская задолженность', html: `
+    <div class="report-preview">
+      <div class="rp-head">Статус расчётов</div>
+      ${[['Оплачено в срок','₽718 000'],['Ожидают оплаты','₽320 000'],['Просрочено','₽124 000'],['Под риском','₽41 500']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">Просроченные счета</div>
+      ${[['AGN-0021 · SkyNet IO','₽82 500','18 дней'],['AGN-0018 · ТехЛаб','₽41 500','32 дня']]
+        .map(([n,v,d])=>`<div class="rp-row"><span class="rp-label">${n}<br><small style="color:var(--red)">${d} просрочки</small></span><span class="rp-val" style="color:var(--red)">${v}</span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Напоминания отправлены')">Отправить напоминания</button>
+    </div>` },
+
+  { title:'Рост и воронка · Q2 2026', html: `
+    <div class="report-preview">
+      <div class="rp-head">Конверсия воронки</div>
+      ${[['Входящих запросов','64'],['Отправили КП','32 (50%)'],['Переговоры','18 (28%)'],['Договор подписан','11 (17%)'],['Проект начат','8 (13%)']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+      <div class="rp-head">Источники лидов</div>
+      ${[['Рекомендации','47%'],['Входящий сайт','28%'],['Исходящий аутрич','15%'],['Соцсети','10%']]
+        .map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+    </div>
+    <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+      <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+      <button class="btn-accent" onclick="closePanel();showToast('✓ Отчёт экспортирован')">Экспорт PDF</button>
+    </div>` },
+]
+
+// ─────────────────────────────────────────────
+// WIRE ALL BUTTONS
+// ─────────────────────────────────────────────
+
+// Topbar CTA
+document.getElementById('topbarCta').addEventListener('click', () => {
+  const page = document.querySelector('.page.active')?.dataset.page || 'overview'
+  const map = {
+    overview: () => openPanel('Новый проект', FORMS.project),
+    projects: () => openPanel('Новый проект', FORMS.project),
+    clients:  () => openPanel('Новый клиент', FORMS.client),
+    tasks:    () => openPanel('Новая задача', FORMS.task),
+    tracker:  () => openPanel('Добавить запись', FORMS.timeEntry),
+    income:   () => openPanel('Экспорт доходов', FORMS.export),
+    invoices: () => openPanel('Новый счёт', FORMS.invoice),
+    reports:  () => openPanel('Создать отчёт', FORMS.export),
+  }
+  ;(map[page] || map.overview)()
+})
+
+// Mobile top "+Новый" button
+document.querySelector('.mobile-header .btn-accent')?.addEventListener('click', () => {
+  closeDrawer(); openPanel('Новый проект', FORMS.project)
+})
+
+// Inline card header buttons (Projects, Tasks, Invoices)
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button')
+  if (!btn) return
+
+  // Inline "+" buttons in card headers (not topbar)
+  if (btn !== document.getElementById('topbarCta') && btn.classList.contains('btn-accent')) {
+    const page = document.querySelector('.page.active')?.dataset.page
+    if (page === 'projects')  { openPanel('Новый проект',      FORMS.project);  return }
+    if (page === 'clients')   { openPanel('Новый клиент',      FORMS.client);   return }
+    if (page === 'tasks')     { openPanel('Новая задача',       FORMS.task);     return }
+    if (page === 'invoices')  { openPanel('Новый счёт',         FORMS.invoice);  return }
+    if (page === 'reports')   { openPanel('Создать отчёт',      FORMS.export);   return }
+    if (page === 'tracker')   { openPanel('Добавить запись',    FORMS.timeEntry);return }
+  }
+
+  // "Открыть →" on client cards
+  if (btn.textContent.trim() === 'Открыть →') {
+    const card = btn.closest('.client-card')
+    const name = card?.querySelector('.cl-name')?.textContent || 'Клиент'
+    const cl   = CLIENTS_DATA.find(c => c.name === name)
+    if (cl) {
+      const projs = PROJECTS.filter(p => p.client === cl.name)
+      const projHTML = projs.length
+        ? projs.map(p => `<div class="rp-row"><span class="rp-label">${p.project}</span><span class="rp-val"><span class="pill ${p.status}">${STATUS_LABEL[p.status]}</span></span></div>`).join('')
+        : `<div style="color:var(--text3);font-size:13px">Нет активных проектов</div>`
+      openPanel(cl.name, `
+        <div class="report-preview">
+          <div class="rp-head">Информация</div>
+          ${[['Клиент с',cl.since],['Проектов',cl.projects],['LTV',cl.ltv],['Июнь 2026',cl.revenue]].map(([l,v])=>`<div class="rp-row"><span class="rp-label">${l}</span><span class="rp-val">${v}</span></div>`).join('')}
+          <div class="rp-head">Проекты</div>
+          ${projHTML}
+        </div>
+        <div class="panel-footer" style="padding:0;border:none;margin-top:8px">
+          <button class="btn-ghost" onclick="closePanel()">Закрыть</button>
+          <button class="btn-accent" onclick="closePanel();openPanel('Новый проект',FORMS.project)">+ Новый проект</button>
+        </div>`)
+    }
+  }
+
+  // Checkbox toggle
+  if (btn.classList.contains('check-box') || e.target.closest('.check-box')) {
+    const box = e.target.closest('.check-box')
+    const isChecked = box.classList.toggle('checked')
+    box.setAttribute('aria-checked', isChecked)
+    const nameEl = box.closest('.task-item')?.querySelector('.task-name')
+    nameEl?.classList.toggle('crossed', isChecked)
+    showToast(isChecked ? '✓ Задача выполнена' : 'Задача возобновлена')
+  }
+})
+
+// Topbar period selector
+document.querySelector('.topbar .btn-ghost')?.addEventListener('click', () => {
+  openPanel('Выбор периода', `
+    <div class="form-field"><label class="form-label">Быстрый выбор</label>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+        ${['Сегодня','Эта неделя','Этот месяц','Последние 30 дней','Q2 2026','Q1 2026','2026 (год)','Произвольный период']
+          .map(o=>`<button class="btn-ghost" style="justify-content:flex-start" onclick="document.querySelector('.topbar-period span')&&null;closePanel();showToast('Период: ${o}')">${o}</button>`).join('')}
+      </div>
+    </div>`)
+})
+
+// Report cards
+document.querySelectorAll('.report-card').forEach((card, i) => {
+  card.addEventListener('click', () => {
+    if (REPORT_PANELS[i]) openPanel(REPORT_PANELS[i].title, REPORT_PANELS[i].html)
+  })
+})
+
+// ─────────────────────────────────────────────
 // INIT LUCIDE
 // ─────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -1501,5 +1891,24 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fallback — Lucide might already be loaded
 if (window.lucide) lucide.createIcons()
 </script>
+
+<!-- ── Side Panel ──────────────────────────── -->
+<div class="panel-overlay" id="panelOverlay"></div>
+<div class="side-panel" id="sidePanel" role="dialog" aria-modal="true">
+  <div class="panel-head">
+    <div class="panel-title" id="panelTitle"></div>
+    <button class="panel-close" onclick="closePanel()" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- ── Toast ──────────────────────────────── -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span></span>
+</div>
+
 </body>
 </html>
