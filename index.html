@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Agency Dashboard</title>
+  <script>
+    ;(function () {
+      var t = new URLSearchParams(location.search).get('theme')
+      if (t) document.documentElement.dataset.theme = t
+    })()
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f5f4f0;
+      --surface: #ffffff;
+      --surface2: #eeece8;
+      --border: #e0ddd7;
+      --text: #18160f;
+      --text2: #6b6558;
+      --text3: #a09890;
+      --accent: #c8562a;
+      --accent-soft: rgba(200,86,42,.1);
+      --green: #2a7a4b;
+      --green-soft: rgba(42,122,75,.1);
+      --red: #c0392b;
+      --red-soft: rgba(192,57,43,.1);
+      --amber: #b45309;
+      --amber-soft: rgba(180,83,9,.1);
+      --blue: #1e5799;
+      --blue-soft: rgba(30,87,153,.1);
+      --card-shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.04);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme='light']) {
+        --bg: #0e0d0b;
+        --surface: #161410;
+        --surface2: #1e1c17;
+        --border: #2a2720;
+        --text: #f0ede6;
+        --text2: #908880;
+        --text3: #504840;
+        --card-shadow: 0 1px 3px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.3);
+      }
+    }
+
+    html[data-theme='dark'] {
+      --bg: #0e0d0b;
+      --surface: #161410;
+      --surface2: #1e1c17;
+      --border: #2a2720;
+      --text: #f0ede6;
+      --text2: #908880;
+      --text3: #504840;
+      --card-shadow: 0 1px 3px rgba(0,0,0,.5), 0 4px 16px rgba(0,0,0,.3);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* ── Lucide icon defaults ──────────────────── */
+    .ico {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .ico svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 1.75;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .ico-md svg { width: 18px; height: 18px; }
+    .ico-lg svg { width: 22px; height: 22px; }
+    .ico-xl svg { width: 28px; height: 28px; }
+
+    /* ── Sidebar ───────────────────────────────── */
+    .sidebar {
+      width: 210px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-mark {
+      width: 30px; height: 30px;
+      background: var(--accent);
+      border-radius: 6px;
+      font-size: 13px; font-weight: 900;
+      color: #fff; letter-spacing: -1px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .logo-text { font-size: 14.5px; font-weight: 700; letter-spacing: -0.2px; }
+    .logo-sub  { font-size: 10.5px; color: var(--text3); }
+
+    .sidebar-nav { padding: 10px 8px; flex: 1; }
+
+    .nav-group-label {
+      font-size: 9.5px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      color: var(--text3);
+      padding: 10px 10px 4px;
+    }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 7px;
+      font-size: 13px; font-weight: 500;
+      color: var(--text2);
+      cursor: pointer; text-decoration: none;
+      transition: background .12s, color .12s;
+      border: none; background: none; width: 100%; text-align: left;
+    }
+
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+
+    .nav-item.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 10px; font-weight: 700;
+      background: var(--accent); color: #fff;
+      border-radius: 8px; padding: 1px 6px;
+      min-width: 18px; text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 10px 8px;
+      border-top: 1px solid var(--border);
+    }
+
+    .user-row {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 10px; border-radius: 7px;
+      cursor: pointer;
+      transition: background .12s;
+    }
+
+    .user-row:hover { background: var(--surface2); }
+
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--accent);
+      font-size: 11px; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .user-name { font-size: 12.5px; font-weight: 600; }
+    .user-role { font-size: 11px; color: var(--text3); }
+
+    /* ── Mobile ──────────────────────────────── */
+    .mobile-header {
+      display: none;
+      position: sticky; top: 0; z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 16px;
+      align-items: center; justify-content: space-between;
+    }
+
+    .hamburger {
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 1px solid var(--border); background: none;
+      cursor: pointer; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 4px; color: var(--text);
+    }
+
+    .hamburger span { display: block; width: 16px; height: 1.5px; background: currentColor; border-radius: 1px; }
+    .mobile-title { font-size: 15px; font-weight: 700; }
+
+    .drawer-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 90;
+    }
+
+    .drawer-overlay.open { display: block; }
+
+    .drawer {
+      position: fixed; top: 0; left: 0; bottom: 0; width: 230px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      z-index: 100; transform: translateX(-100%);
+      transition: transform .2s ease-out;
+      display: flex; flex-direction: column; overflow-y: auto;
+    }
+
+    .drawer.open { transform: translateX(0); }
+
+    /* ── Main layout ───────────────────────────── */
+    .main {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column;
+      height: 100vh; overflow: hidden;
+    }
+
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .topbar-left { display: flex; flex-direction: column; }
+    .topbar-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+    .topbar-period { font-size: 11.5px; color: var(--text3); margin-top: 1px; }
+    .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+    .btn-ghost {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 7px;
+      border: 1px solid var(--border); background: transparent;
+      font-size: 12.5px; font-weight: 500; color: var(--text2);
+      cursor: pointer; transition: background .12s;
+    }
+
+    .btn-ghost:hover { background: var(--surface2); }
+
+    .btn-accent {
+      display: flex; align-items: center; gap: 5px;
+      padding: 7px 14px; border-radius: 7px; border: none;
+      background: var(--accent); color: #fff;
+      font-size: 12.5px; font-weight: 600;
+      cursor: pointer; transition: opacity .12s;
+    }
+
+    .btn-accent:hover { opacity: .88; }
+
+    /* ── Pages ─────────────────────────────────── */
+    .pages-wrap {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .page { display: none; padding: 22px 24px; flex-direction: column; gap: 18px; }
+    .page.active { display: flex; }
+
+    /* ── Card ──────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+    }
+
+    .card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      padding: 16px 20px 12px; border-bottom: 1px solid var(--border); gap: 12px;
+    }
+
+    .card-title { font-size: 13px; font-weight: 700; }
+    .card-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .card-body  { padding: 16px 20px; }
+
+    /* ── KPI row ───────────────────────────────── */
+    .kpi-row {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 1px; background: var(--border);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    }
+
+    .kpi-cell {
+      background: var(--surface);
+      padding: 18px 20px 16px;
+    }
+
+    .kpi-cell:first-child { border-radius: 11px 0 0 11px; }
+    .kpi-cell:last-child  { border-radius: 0 11px 11px 0; }
+
+    .kpi-icon {
+      width: 30px; height: 30px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .kpi-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .kpi-label  { font-size: 10.5px; font-weight: 600; letter-spacing: .5px; text-transform: uppercase; color: var(--text3); margin-bottom: 6px; }
+    .kpi-main   { display: flex; align-items: baseline; gap: 5px; flex-wrap: wrap; }
+    .kpi-value  { font-size: 25px; font-weight: 800; letter-spacing: -1.2px; line-height: 1; }
+    .kpi-unit   { font-size: 13px; font-weight: 600; color: var(--text3); }
+    .kpi-delta  { display: inline-flex; align-items: center; gap: 2px; font-size: 11.5px; font-weight: 700; margin-top: 7px; }
+    .kpi-delta.up   { color: var(--green); }
+    .kpi-delta.down { color: var(--red); }
+
+    /* ── Grid layouts ──────────────────────────── */
+    .row-2 { display: grid; grid-template-columns: 1fr 320px; gap: 14px; }
+    .row-3 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+    /* ── Chart meta ───────────────────────────── */
+    .chart-meta { display: flex; gap: 14px; flex-wrap: wrap; }
+    .chart-meta-item { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text2); }
+    .chart-meta-dot  { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+    .chart-meta-val  { font-weight: 700; color: var(--text); }
+
+    /* ── Funnel ───────────────────────────────── */
+    .funnel { display: flex; flex-direction: column; gap: 10px; }
+    .funnel-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+    .funnel-label { font-size: 12px; color: var(--text2); font-weight: 500; }
+    .funnel-right { display: flex; align-items: center; gap: 8px; }
+    .funnel-count { font-size: 12px; font-weight: 700; }
+    .funnel-pct   { font-size: 11px; color: var(--text3); min-width: 30px; text-align: right; }
+    .funnel-track { height: 5px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+    .funnel-fill  { height: 100%; border-radius: 3px; background: var(--accent); transition: width .5s; }
+
+    /* ── Table ────────────────────────────────── */
+    .data-table { width: 100%; border-collapse: collapse; }
+
+    .data-table th {
+      font-size: 10.5px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .6px;
+      color: var(--text3); padding: 0 10px 10px;
+      text-align: left; border-bottom: 1px solid var(--border);
+    }
+
+    .data-table th:first-child { padding-left: 18px; }
+    .data-table th:last-child  { padding-right: 18px; }
+
+    .data-table td {
+      padding: 10px; font-size: 12.5px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .data-table td:first-child { padding-left: 18px; }
+    .data-table td:last-child  { padding-right: 18px; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover td { background: var(--surface2); }
+
+    /* ── Badges ───────────────────────────────── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 10.5px; font-weight: 600;
+      border-radius: 5px; padding: 2px 8px;
+    }
+
+    .pill svg { width: 9px; height: 9px; stroke: currentColor; fill:none; stroke-width:2.5; }
+
+    .pill.active  { background: var(--green-soft);  color: var(--green); }
+    .pill.review  { background: var(--amber-soft);  color: var(--amber); }
+    .pill.done    { background: var(--accent-soft); color: var(--accent); }
+    .pill.paused  { background: var(--surface2);    color: var(--text3); }
+    .pill.paid    { background: var(--green-soft);  color: var(--green); }
+    .pill.pending { background: var(--amber-soft);  color: var(--amber); }
+    .pill.overdue { background: var(--red-soft);    color: var(--red);   }
+    .pill.sent    { background: var(--blue-soft);   color: var(--blue);  }
+
+    /* ── Client chip ──────────────────────────── */
+    .client-chip { display: inline-flex; align-items: center; gap: 6px; }
+    .c-initial {
+      width: 22px; height: 22px; border-radius: 5px;
+      font-size: 9.5px; font-weight: 800; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .c-name { font-weight: 600; font-size: 12.5px; }
+    .c-sub  { font-size: 11.5px; color: var(--text3); }
+
+    /* ── Progress ─────────────────────────────── */
+    .prog-rail {
+      width: 64px; height: 3px; background: var(--surface2);
+      border-radius: 2px; overflow: hidden;
+      display: inline-block; vertical-align: middle; margin-right: 5px;
+    }
+    .prog-fill { height: 100%; border-radius: 2px; }
+    .prog-pct  { font-size: 11px; color: var(--text3); vertical-align: middle; }
+
+    /* ── Breakdown ────────────────────────────── */
+    .breakdown { display: flex; flex-direction: column; gap: 9px; }
+    .bk-item   { display: flex; align-items: center; gap: 10px; }
+    .bk-swatch { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+    .bk-label  { font-size: 12px; color: var(--text2); flex: 1; }
+    .bk-bar-wrap { width: 80px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+    .bk-bar-fill { height: 100%; border-radius: 2px; }
+    .bk-pct    { font-size: 11.5px; font-weight: 700; width: 28px; text-align: right; }
+
+    /* ── Task list ────────────────────────────── */
+    .task-list { display: flex; flex-direction: column; }
+    .task-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .task-item:last-child { border-bottom: none; }
+    .check-box {
+      width: 17px; height: 17px; border-radius: 4px;
+      border: 1.5px solid var(--border); flex-shrink: 0;
+      margin-top: 1px; display: flex; align-items: center;
+      justify-content: center; cursor: pointer;
+      transition: background .12s, border-color .12s;
+    }
+    .check-box svg { width: 9px; height: 9px; stroke: #fff; fill:none; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; opacity: 0; }
+    .check-box.checked { background: var(--green); border-color: var(--green); }
+    .check-box.checked svg { opacity: 1; }
+
+    .task-body  { flex: 1; min-width: 0; }
+    .task-name  { font-size: 12.5px; font-weight: 500; line-height: 1.35; }
+    .task-name.crossed { text-decoration: line-through; color: var(--text3); }
+    .task-meta  { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+    .task-proj  { font-size: 11px; color: var(--text3); }
+    .due-tag { font-size: 10.5px; font-weight: 600; border-radius: 4px; padding: 1px 6px; }
+    .due-tag.urgent { background: var(--red-soft);   color: var(--red); }
+    .due-tag.soon   { background: var(--amber-soft); color: var(--amber); }
+    .due-tag.done   { background: var(--green-soft); color: var(--green); }
+
+    /* ── Timer ────────────────────────────────── */
+    .timer-card {
+      background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 28px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 20px; box-shadow: var(--card-shadow);
+    }
+
+    .timer-display {
+      font-size: 44px; font-weight: 800; letter-spacing: -2px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .timer-controls { display: flex; gap: 8px; align-items: center; }
+
+    .btn-timer-start {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 22px; border-radius: 8px; border: none;
+      background: var(--accent); color: #fff;
+      font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: opacity .12s;
+    }
+    .btn-timer-start:hover { opacity: .88; }
+    .btn-timer-start svg { width: 14px; height: 14px; fill: #fff; stroke: none; }
+
+    .btn-timer-reset {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 8px; border: none;
+      background: var(--surface2); color: var(--text2);
+      font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: background .12s;
+    }
+    .btn-timer-reset:hover { background: var(--border); }
+    .btn-timer-reset svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .timer-project-select {
+      padding: 8px 12px; border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-size: 12.5px; font-weight: 500; cursor: pointer;
+    }
+
+    .time-log { display: flex; flex-direction: column; }
+    .time-log-item {
+      display: flex; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px;
+    }
+    .time-log-item:last-child { border-bottom: none; }
+    .time-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .time-body   { flex: 1; }
+    .time-title  { font-size: 12.5px; font-weight: 500; }
+    .time-client { font-size: 11px; color: var(--text3); }
+    .time-dur    { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .time-range  { font-size: 11px; color: var(--text3); }
+
+    /* ── Clients ──────────────────────────────── */
+    .client-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap: 14px;
+    }
+    .client-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 18px 20px; box-shadow: var(--card-shadow);
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .client-card-head { display: flex; align-items: center; gap: 10px; }
+    .cl-logo {
+      width: 38px; height: 38px; border-radius: 9px;
+      font-size: 14px; font-weight: 800; color: #fff;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .cl-name  { font-size: 14px; font-weight: 700; }
+    .cl-since { font-size: 11px; color: var(--text3); }
+    .client-stats { display: flex; gap: 16px; }
+    .cl-stat-label { font-size: 10.5px; color: var(--text3); text-transform: uppercase; letter-spacing:.5px; }
+    .cl-stat-val   { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; margin-top: 2px; }
+    .client-card-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      padding-top: 10px; border-top: 1px solid var(--border);
+    }
+
+    /* ── Reports ──────────────────────────────── */
+    .report-grid { display: grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap: 14px; }
+    .report-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      box-shadow: var(--card-shadow);
+      display: flex; flex-direction: column; gap: 8px;
+      cursor: pointer; transition: box-shadow .15s, transform .15s;
+    }
+    .report-card:hover { box-shadow: 0 4px 24px rgba(0,0,0,.1); transform: translateY(-1px); }
+    .report-icon-wrap {
+      width: 40px; height: 40px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 4px;
+    }
+    .report-icon-wrap svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .report-name { font-size: 13px; font-weight: 700; }
+    .report-desc { font-size: 11.5px; color: var(--text3); line-height: 1.45; }
+    .report-date { font-size: 11px; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+    .report-date svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    /* ── Income ───────────────────────────────── */
+    .income-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+    .income-row:last-child { border-bottom: none; }
+    .income-icon { width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .income-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+    .income-body { flex: 1; }
+    .income-title  { font-size: 12.5px; font-weight: 500; }
+    .income-client { font-size: 11px; color: var(--text3); }
+    .income-amount { font-size: 13px; font-weight: 700; color: var(--green); }
+    .income-date   { font-size: 11px; color: var(--text3); text-align: right; }
+
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 1100px) {
+      .row-2 { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 960px) {
+      .kpi-row { grid-template-columns: repeat(2,1fr); }
+      .kpi-cell:nth-child(2) { border-radius: 0 11px 0 0; }
+      .kpi-cell:nth-child(3) { border-radius: 0 0 0 11px; }
+      .row-3 { grid-template-columns: 1fr; }
+      .timer-card { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 640px) {
+      .sidebar { display: none; }
+      .mobile-header { display: flex; }
+      .topbar { display: none; }
+      .page { padding: 14px; gap: 14px; }
+      .kpi-value { font-size: 22px; }
+      .timer-display { font-size: 32px; }
+    }
+    @media (max-width: 420px) {
+      .kpi-row { grid-template-columns: 1fr; }
+      .kpi-cell:first-child { border-radius: 11px 11px 0 0; }
+      .kpi-cell:last-child  { border-radius: 0 0 11px 11px; }
+      .kpi-cell:nth-child(2), .kpi-cell:nth-child(3) { border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Sidebar ────────────────────────────────── -->
+<nav class="sidebar" aria-label="Навигация">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AG</div>
+    <div>
+      <div class="logo-text">Agency</div>
+      <div class="logo-sub">Workspace</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-group-label">Главное</div>
+    <button class="nav-item active" data-page="overview" aria-current="page">
+      <span class="ico"><i data-lucide="layout-dashboard"></i></span> Обзор
+    </button>
+    <button class="nav-item" data-page="projects">
+      <span class="ico"><i data-lucide="folder-open"></i></span> Проекты
+      <span class="nav-badge">8</span>
+    </button>
+    <button class="nav-item" data-page="clients">
+      <span class="ico"><i data-lucide="users"></i></span> Клиенты
+    </button>
+    <button class="nav-item" data-page="tasks">
+      <span class="ico"><i data-lucide="check-square"></i></span> Задачи
+      <span class="nav-badge">4</span>
+    </button>
+    <button class="nav-item" data-page="tracker">
+      <span class="ico"><i data-lucide="clock"></i></span> Тайм-трекер
+    </button>
+
+    <div class="nav-group-label" style="margin-top:10px">Финансы</div>
+    <button class="nav-item" data-page="income">
+      <span class="ico"><i data-lucide="trending-up"></i></span> Доходы
+    </button>
+    <button class="nav-item" data-page="invoices">
+      <span class="ico"><i data-lucide="receipt"></i></span> Счета
+    </button>
+    <button class="nav-item" data-page="reports">
+      <span class="ico"><i data-lucide="bar-chart-2"></i></span> Отчёты
+    </button>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-row" role="button" tabindex="0" aria-label="Профиль Алексей С.">
+      <div class="avatar">АС</div>
+      <div>
+        <div class="user-name">Алексей С.</div>
+        <div class="user-role">Владелец</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Mobile header ──────────────────────────── -->
+<div class="mobile-header">
+  <button class="hamburger" id="menuBtn" aria-label="Открыть меню" aria-expanded="false">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="mobile-title" id="mobileTitle">Обзор</div>
+  <button class="btn-accent" style="font-size:12px;padding:6px 12px">+ Новый</button>
+</div>
+
+<div class="drawer-overlay" id="overlay"></div>
+
+<nav class="drawer" id="drawer" aria-hidden="true">
+  <div class="sidebar-logo">
+    <div class="logo-mark">AG</div>
+    <div><div class="logo-text">Agency</div><div class="logo-sub">Workspace</div></div>
+  </div>
+  <div class="sidebar-nav">
+    <div class="nav-group-label">Главное</div>
+    <button class="nav-item active" data-page="overview"><span class="ico"><i data-lucide="layout-dashboard"></i></span> Обзор</button>
+    <button class="nav-item" data-page="projects"><span class="ico"><i data-lucide="folder-open"></i></span> Проекты <span class="nav-badge">8</span></button>
+    <button class="nav-item" data-page="clients"><span class="ico"><i data-lucide="users"></i></span> Клиенты</button>
+    <button class="nav-item" data-page="tasks"><span class="ico"><i data-lucide="check-square"></i></span> Задачи <span class="nav-badge">4</span></button>
+    <button class="nav-item" data-page="tracker"><span class="ico"><i data-lucide="clock"></i></span> Тайм-трекер</button>
+    <div class="nav-group-label" style="margin-top:10px">Финансы</div>
+    <button class="nav-item" data-page="income"><span class="ico"><i data-lucide="trending-up"></i></span> Доходы</button>
+    <button class="nav-item" data-page="invoices"><span class="ico"><i data-lucide="receipt"></i></span> Счета</button>
+    <button class="nav-item" data-page="reports"><span class="ico"><i data-lucide="bar-chart-2"></i></span> Отчёты</button>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-row" tabindex="0">
+      <div class="avatar">АС</div>
+      <div><div class="user-name">Алексей С.</div><div class="user-role">Владелец</div></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ───────────────────────────────────── -->
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="topbarTitle">Обзор</div>
+      <div class="topbar-period" id="topbarPeriod">Июнь 2026 · обновлено сейчас</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ghost">
+        <span class="ico"><i data-lucide="calendar"></i></span>
+        Последние 30 дней
+        <span class="ico"><i data-lucide="chevron-down"></i></span>
+      </button>
+      <button class="btn-accent" id="topbarCta">
+        <span class="ico"><i data-lucide="plus"></i></span>
+        Новый проект
+      </button>
+    </div>
+  </header>
+
+  <div class="pages-wrap" id="pagesWrap">
+
+    <!-- ══ OVERVIEW ════════════════════════════ -->
+    <div class="page active" data-page="overview">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--accent-soft);color:var(--accent)">
+            <i data-lucide="circle-dollar-sign"></i>
+          </div>
+          <div class="kpi-label">Доход за месяц</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">842к</span></div>
+          <div class="kpi-delta up">↑ 18.4% к пред. месяцу</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)">
+            <i data-lucide="folder-open"></i>
+          </div>
+          <div class="kpi-label">Активные проекты</div>
+          <div class="kpi-main"><span class="kpi-value">8</span></div>
+          <div class="kpi-delta up">↑ 2 новых в месяце</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)">
+            <i data-lucide="clock"></i>
+          </div>
+          <div class="kpi-label">Часов залогировано</div>
+          <div class="kpi-main"><span class="kpi-value">248</span><span class="kpi-unit">ч</span></div>
+          <div class="kpi-delta down">↓ 6% · загрузка 82%</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)">
+            <i data-lucide="check-square"></i>
+          </div>
+          <div class="kpi-label">Открытых задач</div>
+          <div class="kpi-main"><span class="kpi-value">34</span></div>
+          <div class="kpi-delta up">↑ 4 закрыто сегодня</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <div class="card-title">Динамика дохода</div>
+              <div class="card-sub">Выставлено против оплачено · 6 месяцев</div>
+            </div>
+            <div class="chart-meta">
+              <div class="chart-meta-item"><div class="chart-meta-dot" style="background:#c8562a"></div>Выставлено <span class="chart-meta-val">₽842к</span></div>
+              <div class="chart-meta-item"><div class="chart-meta-dot" style="background:#2a7a4b"></div>Оплачено <span class="chart-meta-val">₽718к</span></div>
+            </div>
+          </div>
+          <div class="card-body" style="height:200px;position:relative">
+            <canvas id="revenueChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Воронка лидов</div><div class="card-sub">Конверсия · июнь 2026</div></div>
+          </div>
+          <div class="card-body">
+            <div class="funnel" id="funnelEl"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row-3">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Активные проекты</div><div class="card-sub">8 в работе</div></div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table"><thead><tr>
+              <th>Клиент / Проект</th><th>Статус</th><th>Прогресс</th><th>Дедлайн</th>
+            </tr></thead><tbody id="overviewProjBody"></tbody></table>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Структура дохода</div><div class="card-sub">По типу услуги</div></div></div>
+            <div class="card-body"><div class="breakdown" id="breakdownEl"></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><div><div class="card-title">Задачи на сегодня</div><div class="card-sub">4 открытых · 3 закрытых</div></div></div>
+            <div class="card-body" style="padding:12px 18px">
+              <div class="task-list" id="overviewTaskEl"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ PROJECTS ══════════════════════════ -->
+    <div class="page" data-page="projects">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)"><i data-lucide="layers"></i></div>
+          <div class="kpi-label">Всего проектов</div>
+          <div class="kpi-main"><span class="kpi-value">12</span></div>
+          <div class="kpi-delta up">↑ 2 добавлено в июне</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="zap"></i></div>
+          <div class="kpi-label">В работе</div>
+          <div class="kpi-main"><span class="kpi-value">8</span></div>
+          <div class="kpi-delta up">↑ активных</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="check-circle-2"></i></div>
+          <div class="kpi-label">Завершено</div>
+          <div class="kpi-main"><span class="kpi-value">3</span></div>
+          <div class="kpi-delta up">↑ в этом месяце</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="pause-circle"></i></div>
+          <div class="kpi-label">На паузе</div>
+          <div class="kpi-main"><span class="kpi-value">1</span></div>
+          <div class="kpi-delta down">↓ ожидает клиента</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">Все проекты</div><div class="card-sub">12 проектов</div></div>
+          <button class="btn-accent" style="font-size:12px;padding:6px 12px">
+            <span class="ico"><i data-lucide="plus"></i></span> Новый проект
+          </button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table"><thead><tr>
+            <th>Клиент / Проект</th><th>Статус</th><th>Прогресс</th><th>Бюджет</th><th>Дедлайн</th>
+          </tr></thead><tbody id="allProjBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ CLIENTS ══════════════════════════ -->
+    <div class="page" data-page="clients">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)"><i data-lucide="users"></i></div>
+          <div class="kpi-label">Всего клиентов</div>
+          <div class="kpi-main"><span class="kpi-value">9</span></div>
+          <div class="kpi-delta up">↑ 1 новый в июне</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="user-check"></i></div>
+          <div class="kpi-label">Активных</div>
+          <div class="kpi-main"><span class="kpi-value">6</span></div>
+          <div class="kpi-delta up">↑ есть проекты</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="heart-handshake"></i></div>
+          <div class="kpi-label">LTV (средний)</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">480к</span></div>
+          <div class="kpi-delta up">↑ 11% vs год назад</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="star"></i></div>
+          <div class="kpi-label">NPS</div>
+          <div class="kpi-main"><span class="kpi-value">78</span></div>
+          <div class="kpi-delta up">↑ Excellent</div>
+        </div>
+      </div>
+      <div class="client-grid" id="clientGrid"></div>
+    </div>
+
+    <!-- ══ TASKS ══════════════════════════ -->
+    <div class="page" data-page="tasks">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--red-soft);color:var(--red)"><i data-lucide="list-todo"></i></div>
+          <div class="kpi-label">Открытых</div>
+          <div class="kpi-main"><span class="kpi-value">34</span></div>
+          <div class="kpi-delta down">↓ 8 просрочено</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="check-circle-2"></i></div>
+          <div class="kpi-label">Закрыто сегодня</div>
+          <div class="kpi-main"><span class="kpi-value">4</span></div>
+          <div class="kpi-delta up">↑ на 1 больше вчера</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)"><i data-lucide="calendar-check"></i></div>
+          <div class="kpi-label">На этой неделе</div>
+          <div class="kpi-main"><span class="kpi-value">18</span></div>
+          <div class="kpi-delta up">↑ 12 закрыто</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="alert-triangle"></i></div>
+          <div class="kpi-label">Срочных</div>
+          <div class="kpi-main"><span class="kpi-value">6</span></div>
+          <div class="kpi-delta down">↓ нужно внимание</div>
+        </div>
+      </div>
+      <div class="row-3">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Открытые задачи</div><div class="card-sub">34 задачи</div></div>
+            <button class="btn-accent" style="font-size:12px;padding:6px 12px">
+              <span class="ico"><i data-lucide="plus"></i></span> Задача
+            </button>
+          </div>
+          <div class="card-body" style="padding:12px 18px">
+            <div class="task-list" id="openTasksEl"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Выполненные задачи</div><div class="card-sub">Закрытые за неделю</div></div>
+          </div>
+          <div class="card-body" style="padding:12px 18px">
+            <div class="task-list" id="doneTasksEl"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ TIME TRACKER ══════════════════════════ -->
+    <div class="page" data-page="tracker">
+      <div class="timer-card">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px">Активный таймер</div>
+          <div class="timer-display" id="timerDisplay">00:00:00</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <select class="timer-project-select" id="timerProject">
+            <option>Altacom · Ребрендинг</option>
+            <option>МаркетТех · Landing + SEO</option>
+            <option>FinStart · Дизайн-система</option>
+            <option>SkyNet IO · Мобильный UI</option>
+          </select>
+          <div class="timer-controls">
+            <button class="btn-timer-start" id="timerStartBtn" onclick="toggleTimer()">
+              <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg>
+              Старт
+            </button>
+            <button class="btn-timer-reset" onclick="resetTimer()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+              Сброс
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="sun"></i></div>
+          <div class="kpi-label">Сегодня</div>
+          <div class="kpi-main"><span class="kpi-value">4.5</span><span class="kpi-unit">ч</span></div>
+          <div class="kpi-delta up">↑ план 8 ч</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)"><i data-lucide="calendar-days"></i></div>
+          <div class="kpi-label">Эта неделя</div>
+          <div class="kpi-main"><span class="kpi-value">28.5</span><span class="kpi-unit">ч</span></div>
+          <div class="kpi-delta up">↑ 95% от нормы</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="calendar"></i></div>
+          <div class="kpi-label">Этот месяц</div>
+          <div class="kpi-main"><span class="kpi-value">248</span><span class="kpi-unit">ч</span></div>
+          <div class="kpi-delta down">↓ 6% vs пред. месяц</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="percent"></i></div>
+          <div class="kpi-label">Биллируемых</div>
+          <div class="kpi-main"><span class="kpi-value">83%</span></div>
+          <div class="kpi-delta up">↑ цель 80%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">Логи сегодня</div><div class="card-sub">19 июня 2026</div></div>
+        </div>
+        <div class="card-body" style="padding:8px 20px">
+          <div class="time-log" id="timeLogEl"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INCOME ══════════════════════════ -->
+    <div class="page" data-page="income">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--accent-soft);color:var(--accent)"><i data-lucide="banknote"></i></div>
+          <div class="kpi-label">Июнь 2026</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">842к</span></div>
+          <div class="kpi-delta up">↑ 18.4% vs май</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="trending-up"></i></div>
+          <div class="kpi-label">Q2 2026</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">2.1М</span></div>
+          <div class="kpi-delta up">↑ 24% vs Q1</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="hourglass"></i></div>
+          <div class="kpi-label">Ожидается</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">320к</span></div>
+          <div class="kpi-delta up">↑ не оплачено</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--red-soft);color:var(--red)"><i data-lucide="alert-circle"></i></div>
+          <div class="kpi-label">Просрочено</div>
+          <div class="kpi-main"><span class="kpi-unit">₽</span><span class="kpi-value">124к</span></div>
+          <div class="kpi-delta down">↓ требует действий</div>
+        </div>
+      </div>
+
+      <div class="row-2">
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">История платежей</div><div class="card-sub">Последние поступления</div></div>
+          </div>
+          <div class="card-body" style="padding:8px 20px">
+            <div id="incomeListEl"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head">
+            <div><div class="card-title">Разбивка по клиентам</div><div class="card-sub">Июнь 2026</div></div>
+          </div>
+          <div class="card-body">
+            <div class="breakdown" id="incomeByClientEl"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INVOICES ══════════════════════════ -->
+    <div class="page" data-page="invoices">
+      <div class="kpi-row">
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--blue-soft);color:var(--blue)"><i data-lucide="file-text"></i></div>
+          <div class="kpi-label">Всего счетов</div>
+          <div class="kpi-main"><span class="kpi-value">24</span></div>
+          <div class="kpi-delta up">↑ в июне</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--green-soft);color:var(--green)"><i data-lucide="circle-check-big"></i></div>
+          <div class="kpi-label">Оплачено</div>
+          <div class="kpi-main"><span class="kpi-value">18</span></div>
+          <div class="kpi-delta up">↑ 75%</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--amber-soft);color:var(--amber)"><i data-lucide="send"></i></div>
+          <div class="kpi-label">Ожидают оплаты</div>
+          <div class="kpi-main"><span class="kpi-value">4</span></div>
+          <div class="kpi-delta up">↑ ₽320к</div>
+        </div>
+        <div class="kpi-cell">
+          <div class="kpi-icon" style="background:var(--red-soft);color:var(--red)"><i data-lucide="clock-alert"></i></div>
+          <div class="kpi-label">Просрочено</div>
+          <div class="kpi-main"><span class="kpi-value">2</span></div>
+          <div class="kpi-delta down">↓ ₽124к</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div><div class="card-title">Все счета</div><div class="card-sub">24 счёта</div></div>
+          <button class="btn-accent" style="font-size:12px;padding:6px 12px">
+            <span class="ico"><i data-lucide="plus"></i></span> Счёт
+          </button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <table class="data-table"><thead><tr>
+            <th>№ счёта</th><th>Клиент</th><th>Описание</th><th>Статус</th><th>Сумма</th>
+          </tr></thead><tbody id="invoicesBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTS ══════════════════════════ -->
+    <div class="page" data-page="reports">
+      <div style="margin-bottom:4px">
+        <div style="font-size:15px;font-weight:700;letter-spacing:-0.2px">Отчёты</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px">Выберите нужный шаблон для экспорта или просмотра</div>
+      </div>
+      <div class="report-grid" id="reportGrid"></div>
+    </div>
+
+  </div><!-- /pages-wrap -->
+</main>
+
+<script>
+// ─────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────
+const ACCENT = '#c8562a', GREEN = '#2a7a4b', AMBER = '#b45309', BLUE = '#1e5799'
+
+const PROJECTS = [
+  { i:'AK', c:ACCENT,    client:'Altacom',    project:'Ребрендинг',         status:'active', pct:72,  budget:'₽140к', deadline:'25 июн' },
+  { i:'МТ', c:BLUE,      client:'МаркетТех',  project:'Landing + SEO',      status:'review', pct:88,  budget:'₽95к',  deadline:'28 июн' },
+  { i:'FS', c:AMBER,     client:'FinStart',   project:'Дизайн-система',     status:'active', pct:45,  budget:'₽210к', deadline:'10 июл' },
+  { i:'ДФ', c:'#6b6558', client:'ДельтаФин',  project:'CRM-интеграция',     status:'paused', pct:30,  budget:'₽180к', deadline:'15 июл' },
+  { i:'ГК', c:GREEN,     client:'ГлобалКом',  project:'Корп. сайт',         status:'done',   pct:100, budget:'₽120к', deadline:'Готово' },
+  { i:'SN', c:BLUE,      client:'SkyNet IO',  project:'Мобильный UI',       status:'active', pct:58,  budget:'₽165к', deadline:'20 июл' },
+  { i:'RP', c:'#7c3aed', client:'RetailPro',  project:'UX аудит',           status:'done',   pct:100, budget:'₽60к',  deadline:'Готово' },
+  { i:'НВ', c:AMBER,     client:'НоваВолна',  project:'Брендбук',           status:'review', pct:75,  budget:'₽85к',  deadline:'30 июн' },
+  { i:'CF', c:GREEN,     client:'CloudFin',   project:'Веб-приложение',     status:'active', pct:22,  budget:'₽380к', deadline:'01 сен' },
+  { i:'МД', c:ACCENT,    client:'МедДата',    project:'Лендинг',            status:'active', pct:55,  budget:'₽70к',  deadline:'05 июл' },
+  { i:'ТЛ', c:'#7c3aed', client:'ТехЛаб',    project:'Дашборд аналитики',  status:'done',   pct:100, budget:'₽200к', deadline:'Готово' },
+  { i:'ЭР', c:BLUE,      client:'ЭкоРитм',   project:'SMM + контент',      status:'active', pct:40,  budget:'₽50к',  deadline:'Месячно' },
+]
+
+const STATUS_LABEL = { active:'В работе', review:'На ревью', done:'Готово', paused:'Пауза' }
+const PROG_COLOR   = { active:ACCENT, review:AMBER, done:GREEN, paused:'#a09890' }
+
+const TASKS_ALL = [
+  { done:false, name:'Финализировать макеты Altacom',       proj:'Altacom',    due:'Сегодня', dueCls:'urgent' },
+  { done:false, name:'Передать SEO-отчёт клиенту',          proj:'МаркетТех',  due:'Завтра',  dueCls:'soon'   },
+  { done:false, name:'Созвон по дизайн-системе',            proj:'FinStart',   due:'25 июн',  dueCls:'soon'   },
+  { done:false, name:'Подготовить КП для нового лида',      proj:'Входящий',   due:'Сегодня', dueCls:'urgent' },
+  { done:false, name:'Тексты для SkyNet лендинга',          proj:'SkyNet IO',  due:'24 июн',  dueCls:'urgent' },
+  { done:false, name:'Согласовать правки брендбука',        proj:'НоваВолна',  due:'25 июн',  dueCls:'soon'   },
+  { done:false, name:'Настроить GTM на сайте FinStart',     proj:'FinStart',   due:'26 июн',  dueCls:'soon'   },
+  { done:true,  name:'Запустить A/B тест лендинга',         proj:'МаркетТех',  due:'Готово',  dueCls:'done'   },
+  { done:true,  name:'Корректура текстов SkyNet',           proj:'SkyNet IO',  due:'Готово',  dueCls:'done'   },
+  { done:true,  name:'Архивировать проект ГлобалКом',       proj:'ГлобалКом',  due:'Готово',  dueCls:'done'   },
+  { done:true,  name:'Финальный дизайн ТехЛаб',            proj:'ТехЛаб',     due:'Готово',  dueCls:'done'   },
+]
+
+const CLIENTS_DATA = [
+  { i:'AK', c:ACCENT,    name:'Altacom',    since:'Клиент с 2023', projects:3, revenue:'₽480к', ltv:'₽1.2М',  status:'active' },
+  { i:'МТ', c:BLUE,      name:'МаркетТех',  since:'Клиент с 2024', projects:2, revenue:'₽240к', ltv:'₽480к',  status:'active' },
+  { i:'FS', c:AMBER,     name:'FinStart',   since:'Клиент с 2025', projects:1, revenue:'₽210к', ltv:'₽210к',  status:'active' },
+  { i:'ГК', c:GREEN,     name:'ГлобалКом',  since:'Клиент с 2022', projects:5, revenue:'₽120к', ltv:'₽2.1М',  status:'done'   },
+  { i:'SN', c:BLUE,      name:'SkyNet IO',  since:'Клиент с 2024', projects:2, revenue:'₽165к', ltv:'₽330к',  status:'active' },
+  { i:'НВ', c:AMBER,     name:'НоваВолна',  since:'Клиент с 2025', projects:1, revenue:'₽85к',  ltv:'₽85к',   status:'review' },
+  { i:'CF', c:GREEN,     name:'CloudFin',   since:'Новый · 2026',  projects:1, revenue:'₽0к',   ltv:'₽380к',  status:'active' },
+  { i:'ТЛ', c:'#7c3aed', name:'ТехЛаб',    since:'Клиент с 2023', projects:4, revenue:'₽200к', ltv:'₽960к',  status:'done'   },
+  { i:'ЭР', c:GREEN,     name:'ЭкоРитм',   since:'Клиент с 2025', projects:1, revenue:'₽50к',  ltv:'₽100к',  status:'active' },
+]
+
+const TIME_LOG = [
+  { color:ACCENT, title:'Макеты главной', client:'Altacom',   dur:'1:45', range:'09:00 – 10:45' },
+  { color:BLUE,   title:'Созвон по SEO', client:'МаркетТех', dur:'0:45', range:'11:00 – 11:45' },
+  { color:AMBER,  title:'Компонентная библиотека', client:'FinStart', dur:'2:00', range:'12:30 – 14:30' },
+]
+
+const INVOICES = [
+  { num:'AGN-0024', client:'Altacom',   desc:'Ребрендинг · этап 2',    status:'paid',    amount:'₽80 000'  },
+  { num:'AGN-0023', client:'FinStart',  desc:'Дизайн-система · старт', status:'pending', amount:'₽105 000' },
+  { num:'AGN-0022', client:'МаркетТех', desc:'SEO · май 2026',          status:'paid',    amount:'₽60 000'  },
+  { num:'AGN-0021', client:'SkyNet IO', desc:'Мобильный UI · аванс',   status:'overdue', amount:'₽82 500'  },
+  { num:'AGN-0020', client:'НоваВолна', desc:'Брендбук · 50%',         status:'sent',    amount:'₽42 500'  },
+  { num:'AGN-0019', client:'ГлобалКом', desc:'Корп. сайт · финал',     status:'paid',    amount:'₽120 000' },
+  { num:'AGN-0018', client:'ТехЛаб',   desc:'Дашборд · этап 3',        status:'overdue', amount:'₽41 500'  },
+  { num:'AGN-0017', client:'ЭкоРитм',  desc:'SMM · май 2026',          status:'paid',    amount:'₽25 000'  },
+]
+
+const INCOME_LIST = [
+  { icon:'briefcase',    bg:'rgba(200,86,42,.12)',  title:'Ребрендинг · этап 1',   client:'Altacom',    amount:'+₽80 000',  date:'18 июн' },
+  { icon:'search',       bg:'rgba(42,122,75,.12)',  title:'SEO · май 2026',         client:'МаркетТех',  amount:'+₽60 000',  date:'15 июн' },
+  { icon:'globe',        bg:'rgba(30,87,153,.12)',  title:'Корп. сайт · финал',    client:'ГлобалКом',  amount:'+₽120 000', date:'12 июн' },
+  { icon:'bar-chart-2',  bg:'rgba(124,58,237,.12)', title:'Дашборд · этап 3',      client:'ТехЛаб',     amount:'+₽100 000', date:'10 июн' },
+  { icon:'megaphone',    bg:'rgba(180,83,9,.12)',   title:'SMM · доп. часы',       client:'ЭкоРитм',    amount:'+₽25 000',  date:'08 июн' },
+  { icon:'eye',          bg:'rgba(200,86,42,.12)',  title:'UX аудит · финал',      client:'RetailPro',  amount:'+₽60 000',  date:'05 июн' },
+]
+
+const REPORTS_DATA = [
+  { icon:'bar-chart-2',    bg:'rgba(200,86,42,.1)',  color:ACCENT,    name:'Финансовый отчёт',        desc:'Доходы, расходы и прибыль по месяцам',     date:'Последний: май 2026'  },
+  { icon:'users',          bg:'rgba(30,87,153,.1)',  color:BLUE,      name:'Отчёт по клиентам',       desc:'LTV, проекты, средний чек по каждому',      date:'Последний: Q1 2026'   },
+  { icon:'folder-open',    bg:'rgba(42,122,75,.1)',  color:GREEN,     name:'Статус проектов',         desc:'Сроки, прогресс и перерасход бюджета',     date:'Сегодня'              },
+  { icon:'clock',          bg:'rgba(180,83,9,.1)',   color:AMBER,     name:'Тайм-отчёт',              desc:'Часы по проектам, биллируемость, KPI',     date:'Эта неделя'           },
+  { icon:'credit-card',    bg:'rgba(192,57,43,.1)',  color:'#c0392b', name:'Дебиторская задолженность',desc:'Неоплаченные счета, просрочки, cash flow', date:'Обновлено сейчас'     },
+  { icon:'trending-up',    bg:'rgba(124,58,237,.1)', color:'#7c3aed', name:'Рост и воронка',           desc:'Лиды, конверсия, источники клиентов',      date:'Последний: июнь 2026' },
+]
+
+// ─────────────────────────────────────────────
+// RENDER HELPERS
+// ─────────────────────────────────────────────
+function renderProjRow(p, withBudget) {
+  return `<tr>
+    <td>
+      <div class="client-chip">
+        <div class="c-initial" style="background:${p.c}">${p.i}</div>
+        <div><div class="c-name">${p.client}</div><div class="c-sub">${p.project}</div></div>
+      </div>
+    </td>
+    <td><span class="pill ${p.status}">${STATUS_LABEL[p.status]}</span></td>
+    <td>
+      <div class="prog-rail"><div class="prog-fill" style="width:${p.pct}%;background:${PROG_COLOR[p.status]}"></div></div>
+      <span class="prog-pct">${p.pct}%</span>
+    </td>
+    ${withBudget ? `<td style="font-size:12px;color:var(--text2)">${p.budget}</td>` : ''}
+    <td style="font-size:12px;color:var(--text3)">${p.deadline}</td>
+  </tr>`
+}
+
+function renderTask(t) {
+  const el = document.createElement('div')
+  el.className = 'task-item'
+  el.innerHTML = `
+    <div class="check-box ${t.done ? 'checked' : ''}" role="checkbox" aria-checked="${t.done}" tabindex="0" aria-label="${t.name}">
+      <svg viewBox="0 0 12 10"><polyline points="1 5 4.5 8.5 11 1.5"/></svg>
+    </div>
+    <div class="task-body">
+      <div class="task-name ${t.done ? 'crossed' : ''}">${t.name}</div>
+      <div class="task-meta">
+        <span class="task-proj">${t.proj}</span>
+        <span class="due-tag ${t.dueCls}">${t.due}</span>
+      </div>
+    </div>`
+  return el
+}
+
+function renderBreakdown(container, items) {
+  items.forEach(b => {
+    const el = document.createElement('div')
+    el.className = 'bk-item'
+    el.innerHTML = `
+      <div class="bk-swatch" style="background:${b.color}"></div>
+      <div class="bk-label">${b.label}</div>
+      <div class="bk-bar-wrap"><div class="bk-bar-fill" style="width:${b.pct}%;background:${b.color}"></div></div>
+      <div class="bk-pct">${b.pct}%</div>`
+    container.appendChild(el)
+  })
+}
+
+// ─────────────────────────────────────────────
+// POPULATE
+// ─────────────────────────────────────────────
+
+// Overview
+PROJECTS.slice(0,6).forEach(p => { document.getElementById('overviewProjBody').innerHTML += renderProjRow(p) })
+
+renderBreakdown(document.getElementById('breakdownEl'), [
+  { label:'Веб-разработка', pct:38, color:ACCENT },
+  { label:'Дизайн',         pct:27, color:BLUE   },
+  { label:'SEO / Маркетинг',pct:20, color:AMBER  },
+  { label:'Консалтинг',     pct:15, color:GREEN  },
+])
+
+const overviewTaskEl = document.getElementById('overviewTaskEl')
+TASKS_ALL.slice(0,7).forEach(t => overviewTaskEl.appendChild(renderTask(t)))
+
+const funnelEl = document.getElementById('funnelEl')
+;[
+  { label:'Входящих запросов', count:64, pct:100 },
+  { label:'Отправили КП',      count:32, pct:50  },
+  { label:'Переговоры',        count:18, pct:28  },
+  { label:'Договор подписан',  count:11, pct:17  },
+  { label:'Проект начат',      count:8,  pct:13  },
+].forEach(s => {
+  funnelEl.innerHTML += `<div class="funnel-step">
+    <div class="funnel-top">
+      <div class="funnel-label">${s.label}</div>
+      <div class="funnel-right"><div class="funnel-count">${s.count}</div><div class="funnel-pct">${s.pct}%</div></div>
+    </div>
+    <div class="funnel-track"><div class="funnel-fill" style="width:${s.pct}%"></div></div>
+  </div>`
+})
+
+// Projects
+PROJECTS.forEach(p => { document.getElementById('allProjBody').innerHTML += renderProjRow(p, true) })
+
+// Clients
+const clientGrid = document.getElementById('clientGrid')
+CLIENTS_DATA.forEach(cl => {
+  const card = document.createElement('div')
+  card.className = 'client-card'
+  card.innerHTML = `
+    <div class="client-card-head">
+      <div class="cl-logo" style="background:${cl.c}">${cl.i}</div>
+      <div><div class="cl-name">${cl.name}</div><div class="cl-since">${cl.since}</div></div>
+      <span class="pill ${cl.status}" style="margin-left:auto">${STATUS_LABEL[cl.status] || cl.status}</span>
+    </div>
+    <div class="client-stats">
+      <div><div class="cl-stat-label">Проектов</div><div class="cl-stat-val">${cl.projects}</div></div>
+      <div><div class="cl-stat-label">LTV</div><div class="cl-stat-val">${cl.ltv}</div></div>
+      <div><div class="cl-stat-label">Июнь</div><div class="cl-stat-val">${cl.revenue}</div></div>
+    </div>
+    <div class="client-card-footer">
+      <span style="font-size:11px;color:var(--text3)">${cl.projects} проект${cl.projects > 1 ? 'а/ов' : ''}</span>
+      <button class="btn-ghost" style="font-size:11.5px;padding:4px 10px">Открыть →</button>
+    </div>`
+  clientGrid.appendChild(card)
+})
+
+// Tasks
+const openTasksEl = document.getElementById('openTasksEl')
+TASKS_ALL.filter(t => !t.done).forEach(t => openTasksEl.appendChild(renderTask(t)))
+const doneTasksEl = document.getElementById('doneTasksEl')
+TASKS_ALL.filter(t => t.done).forEach(t => doneTasksEl.appendChild(renderTask(t)))
+
+// Time log
+const timeLogEl = document.getElementById('timeLogEl')
+TIME_LOG.forEach(e => {
+  timeLogEl.innerHTML += `
+    <div class="time-log-item">
+      <div class="time-dot" style="background:${e.color}"></div>
+      <div class="time-body">
+        <div class="time-title">${e.title}</div>
+        <div class="time-client">${e.client}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="time-dur">${e.dur}</div>
+        <div class="time-range">${e.range}</div>
+      </div>
+    </div>`
+})
+
+// Income
+const incomeListEl = document.getElementById('incomeListEl')
+INCOME_LIST.forEach(e => {
+  const row = document.createElement('div')
+  row.className = 'income-row'
+  row.innerHTML = `
+    <div class="income-icon" style="background:${e.bg};color:var(--text2)">
+      <i data-lucide="${e.icon}"></i>
+    </div>
+    <div class="income-body">
+      <div class="income-title">${e.title}</div>
+      <div class="income-client">${e.client}</div>
+    </div>
+    <div>
+      <div class="income-amount">${e.amount}</div>
+      <div class="income-date">${e.date}</div>
+    </div>`
+  incomeListEl.appendChild(row)
+})
+
+renderBreakdown(document.getElementById('incomeByClientEl'), [
+  { label:'Altacom',   pct:25, color:ACCENT    },
+  { label:'ГлобалКом', pct:22, color:GREEN     },
+  { label:'ТехЛаб',    pct:18, color:'#7c3aed' },
+  { label:'МаркетТех', pct:16, color:BLUE      },
+  { label:'FinStart',  pct:12, color:AMBER     },
+  { label:'Прочие',    pct:7,  color:'#a09890' },
+])
+
+// Invoices
+const INVOICE_STATUS_LABEL = { paid:'Оплачен', pending:'Ожидает', overdue:'Просрочен', sent:'Отправлен' }
+const invBody = document.getElementById('invoicesBody')
+INVOICES.forEach(inv => {
+  invBody.innerHTML += `<tr>
+    <td style="font-weight:700;font-size:12px;color:var(--text3)">${inv.num}</td>
+    <td><span style="font-weight:600">${inv.client}</span></td>
+    <td style="color:var(--text2)">${inv.desc}</td>
+    <td><span class="pill ${inv.status}">${INVOICE_STATUS_LABEL[inv.status]}</span></td>
+    <td style="font-weight:700">${inv.amount}</td>
+  </tr>`
+})
+
+// Reports
+const reportGrid = document.getElementById('reportGrid')
+REPORTS_DATA.forEach(r => {
+  const card = document.createElement('div')
+  card.className = 'report-card'
+  card.innerHTML = `
+    <div class="report-icon-wrap" style="background:${r.bg};color:${r.color}">
+      <i data-lucide="${r.icon}"></i>
+    </div>
+    <div class="report-name">${r.name}</div>
+    <div class="report-desc">${r.desc}</div>
+    <div class="report-date">
+      <i data-lucide="clock" style="display:inline-block;width:10px;height:10px"></i>
+      ${r.date}
+    </div>`
+  reportGrid.appendChild(card)
+})
+
+// ─────────────────────────────────────────────
+// CHART
+// ─────────────────────────────────────────────
+function isDark() {
+  const forced = document.documentElement.dataset.theme
+  if (forced === 'dark') return true
+  if (forced === 'light') return false
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+const rCtx = document.getElementById('revenueChart').getContext('2d')
+
+function buildGrad(ctx, color) {
+  const g = ctx.createLinearGradient(0,0,0,200)
+  g.addColorStop(0, color+'28')
+  g.addColorStop(1, color+'00')
+  return g
+}
+
+new Chart(rCtx, {
+  type: 'line',
+  data: {
+    labels: ['Янв','Фев','Мар','Апр','Май','Июн'],
+    datasets: [
+      { label:'Выставлено', data:[420,510,480,620,710,842], borderColor:ACCENT, backgroundColor: buildGrad(rCtx,ACCENT), borderWidth:2, tension:.38, fill:true, pointBackgroundColor:ACCENT, pointRadius:3.5, pointHoverRadius:5 },
+      { label:'Оплачено',   data:[390,475,460,590,682,718], borderColor:GREEN,  backgroundColor: buildGrad(rCtx,GREEN),  borderWidth:2, tension:.38, fill:true, pointBackgroundColor:GREEN,  pointRadius:3.5, pointHoverRadius:5 },
+    ],
+  },
+  options: {
+    responsive:true, maintainAspectRatio:false,
+    plugins: {
+      legend: { display:false },
+      tooltip: { callbacks: { label: ctx => `  ₽${ctx.parsed.y}к` } },
+    },
+    scales: {
+      x: { grid:{display:false}, ticks:{color:isDark()?'#504840':'#a09890', font:{size:11}}, border:{color:isDark()?'#2a2720':'#e0ddd7'} },
+      y: { grid:{color:isDark()?'#1e1c17':'#eeece8'}, ticks:{color:isDark()?'#504840':'#a09890', font:{size:11}, callback:v=>'₽'+v+'к'}, border:{display:false} },
+    },
+  },
+})
+
+// ─────────────────────────────────────────────
+// TIMER
+// ─────────────────────────────────────────────
+let timerRunning = false, timerSecs = 0, timerInterval = null
+
+function pad(n) { return String(n).padStart(2,'0') }
+
+function updateTimerDisplay() {
+  const h = Math.floor(timerSecs/3600), m = Math.floor((timerSecs%3600)/60), s = timerSecs%60
+  document.getElementById('timerDisplay').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+window.toggleTimer = function() {
+  const btn = document.getElementById('timerStartBtn')
+  if (timerRunning) {
+    clearInterval(timerInterval)
+    timerRunning = false
+    btn.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg> Старт`
+    btn.style.background = ACCENT
+  } else {
+    timerInterval = setInterval(() => { timerSecs++; updateTimerDisplay() }, 1000)
+    timerRunning = true
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg> Стоп`
+    btn.style.background = '#c0392b'
+  }
+}
+
+window.resetTimer = function() {
+  clearInterval(timerInterval)
+  timerRunning = false; timerSecs = 0
+  updateTimerDisplay()
+  const btn = document.getElementById('timerStartBtn')
+  btn.innerHTML = `<svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3" fill="currentColor" stroke="none"/></svg> Старт`
+  btn.style.background = ACCENT
+}
+
+// ─────────────────────────────────────────────
+// ROUTER
+// ─────────────────────────────────────────────
+const PAGE_META = {
+  overview: { title:'Обзор',         period:'Июнь 2026 · обновлено сейчас', cta:'Новый проект' },
+  projects: { title:'Проекты',       period:'12 проектов',                  cta:'Новый проект' },
+  clients:  { title:'Клиенты',       period:'9 клиентов',                   cta:'+ Клиент'     },
+  tasks:    { title:'Задачи',        period:'34 открытых задачи',            cta:'+ Задача'     },
+  tracker:  { title:'Тайм-трекер',   period:'19 июня 2026',                  cta:'+ Запись'     },
+  income:   { title:'Доходы',        period:'Июнь 2026',                     cta:'Экспорт'      },
+  invoices: { title:'Счета',         period:'24 счёта',                      cta:'+ Счёт'       },
+  reports:  { title:'Отчёты',        period:'Все шаблоны',                   cta:'Создать'      },
+}
+
+function navigate(pageId) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'))
+  const target = document.querySelector(`.page[data-page="${pageId}"]`)
+  if (target) target.classList.add('active')
+
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    const active = btn.dataset.page === pageId
+    btn.classList.toggle('active', active)
+    active ? btn.setAttribute('aria-current','page') : btn.removeAttribute('aria-current')
+  })
+
+  const meta = PAGE_META[pageId] || {}
+  document.getElementById('topbarTitle').textContent  = meta.title  || pageId
+  document.getElementById('topbarPeriod').textContent = meta.period || ''
+  document.getElementById('mobileTitle').textContent  = meta.title  || pageId
+
+  const ctaBtn = document.getElementById('topbarCta')
+  ctaBtn.innerHTML = `<span class="ico"><i data-lucide="plus"></i></span> ${meta.cta || '+ Новый'}`
+
+  document.getElementById('pagesWrap').scrollTop = 0
+
+  // Re-init Lucide icons in newly visible content
+  if (window.lucide) lucide.createIcons()
+}
+
+document.querySelectorAll('.nav-item[data-page]').forEach(btn => {
+  btn.addEventListener('click', () => { navigate(btn.dataset.page); closeDrawer() })
+})
+
+// ─────────────────────────────────────────────
+// MOBILE DRAWER
+// ─────────────────────────────────────────────
+const menuBtn = document.getElementById('menuBtn')
+const drawer  = document.getElementById('drawer')
+const overlay = document.getElementById('overlay')
+
+function openDrawer()  { drawer.classList.add('open'); overlay.classList.add('open'); menuBtn.setAttribute('aria-expanded','true') }
+function closeDrawer() { drawer.classList.remove('open'); overlay.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false') }
+
+menuBtn.addEventListener('click', () => drawer.classList.contains('open') ? closeDrawer() : openDrawer())
+overlay.addEventListener('click', closeDrawer)
+
+// ─────────────────────────────────────────────
+// INIT LUCIDE
+// ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.lucide) lucide.createIcons()
+})
+
+// Fallback — Lucide might already be loaded
+if (window.lucide) lucide.createIcons()
+</script>
+</body>
+</html>
