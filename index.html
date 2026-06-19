@@ -1156,6 +1156,24 @@
   </div><!-- /pages-wrap -->
 </main>
 
+<!-- ── Side Panel ──────────────────────────── -->
+<div class="panel-overlay" id="panelOverlay"></div>
+<div class="side-panel" id="sidePanel" role="dialog" aria-modal="true">
+  <div class="panel-head">
+    <div class="panel-title" id="panelTitle"></div>
+    <button class="panel-close" onclick="closePanel()" aria-label="Закрыть">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="panel-body" id="panelBody"></div>
+</div>
+
+<!-- ── Toast ──────────────────────────────── -->
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span></span>
+</div>
+
 <script>
 // ─────────────────────────────────────────────
 // DATA
@@ -1893,24 +1911,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Fallback — Lucide might already be loaded
 if (window.lucide) lucide.createIcons()
 </script>
-
-<!-- ── Side Panel ──────────────────────────── -->
-<div class="panel-overlay" id="panelOverlay"></div>
-<div class="side-panel" id="sidePanel" role="dialog" aria-modal="true">
-  <div class="panel-head">
-    <div class="panel-title" id="panelTitle"></div>
-    <button class="panel-close" onclick="closePanel()" aria-label="Закрыть">
-      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <div class="panel-body" id="panelBody"></div>
-</div>
-
-<!-- ── Toast ──────────────────────────────── -->
-<div class="toast" id="toast" role="status" aria-live="polite">
-  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-  <span></span>
-</div>
 
 </body>
 </html>
